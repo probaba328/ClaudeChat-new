@@ -21,6 +21,7 @@ import 'domain/entities.dart';
 import 'services/attachment_service.dart';
 import 'services/api_client.dart';
 import 'services/content_repository.dart';
+import 'services/esnaf_ai/esnaf_ai_service.dart';
 import 'services/our_home/our_home_actions.dart';
 import 'services/our_home/our_home_away_scenes.dart';
 import 'services/our_home/our_home_emote_registry.dart';
@@ -15331,6 +15332,14 @@ class _SettingsPageState extends State<_SettingsPage> {
                 ],
               ),
               _SettingsCard(
+                title: 'Esnaf AI',
+                icon: Icons.storefront_outlined,
+                onOpenChanged: (open) => _handleCardOpen('Esnaf AI', open),
+                children: <Widget>[
+                  _EsnafAiSettingsPanel(controller: controller),
+                ],
+              ),
+              _SettingsCard(
                 title: 'Toolbox',
                 icon: Icons.construction_outlined,
                 onOpenChanged: (open) => _handleCardOpen('Toolbox', open),
@@ -17215,6 +17224,111 @@ class _LegacyProfileSettingsPanelState
       ],
     ),
   );
+}
+
+class _EsnafAiSettingsPanel extends StatelessWidget {
+  const _EsnafAiSettingsPanel({required this.controller});
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = controller.settings['esnafEnabled'] == true;
+    final storeName = '${controller.settings['esnafStoreName'] ?? ''}';
+    final platform = '${controller.settings['esnafPlatform'] ?? 'trendyol'}';
+    final plan = '${controller.settings['esnafPlan'] ?? ''}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _LegacySettingsSwitchRow(
+            icon: Icons.storefront_outlined,
+            label: 'Esnaf AI modunu etkinleştir',
+            value: enabled,
+            onChanged: (value) =>
+                unawaited(controller.saveSetting('esnafEnabled', value)),
+          ),
+          if (enabled) ...<Widget>[
+            const SizedBox(height: 12),
+            _LegacySettingsField(
+              label: 'Mağaza Adı',
+              initialValue: storeName,
+              onChanged: (value) =>
+                  unawaited(controller.saveSetting('esnafStoreName', value)),
+            ),
+            const SizedBox(height: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text(
+                  'Platform',
+                  style: TextStyle(
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF77716B),
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Wrap(
+                  spacing: 8,
+                  children: EsnafAiService.platformOptions
+                      .map(
+                        (opt) => ChoiceChip(
+                          label: Text(
+                            opt['label']!,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          selected: platform == opt['value'],
+                          onSelected: (_) => unawaited(
+                            controller.saveSetting(
+                              'esnafPlatform',
+                              opt['value']!,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text(
+                  'Plan',
+                  style: TextStyle(
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF77716B),
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Wrap(
+                  spacing: 8,
+                  children: EsnafAiService.planOptions
+                      .map(
+                        (opt) => ChoiceChip(
+                          label: Text(
+                            opt,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          selected: plan == opt,
+                          onSelected: (_) => unawaited(
+                            controller.saveSetting('esnafPlan', opt),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _LegacyToolboxSettingsPanel extends StatelessWidget {

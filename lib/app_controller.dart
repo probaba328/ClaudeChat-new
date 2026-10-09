@@ -19,6 +19,7 @@ import 'services/content_repository.dart';
 import 'services/context_budget.dart';
 import 'services/diagnostics_service.dart';
 import 'services/legacy_import_service.dart';
+import 'services/esnaf_ai/esnaf_ai_service.dart';
 import 'services/our_home/our_home_presence_service.dart';
 import 'services/our_home/our_home_simulation_service.dart';
 import 'services/platform_service.dart';
@@ -4402,8 +4403,18 @@ class AppController extends ChangeNotifier {
     return compact.length <= 24 ? compact : '${compact.substring(0, 24)}…';
   }
 
+  String _esnafAiSystemPrompt() {
+    if (settings['esnafEnabled'] != true) return '';
+    return EsnafAiService.buildSystemPrompt(
+      storeName: '${settings['esnafStoreName'] ?? ''}',
+      platform: '${settings['esnafPlatform'] ?? 'trendyol'}',
+      plan: '${settings['esnafPlan'] ?? ''}',
+    );
+  }
+
   String _chatSystemPrompt({bool includeTools = true}) {
     final base = '${settings['systemPrompt'] ?? ''}'.trim();
+    final esnafPrompt = _esnafAiSystemPrompt();
     final toolboxPrompt = includeTools && settings['toolboxEnabled'] != false
         ? _toolboxSystemPrompt()
         : '';
@@ -4414,6 +4425,7 @@ class AppController extends ChangeNotifier {
     if (privateMode) {
       return <String>[
         if (base.isNotEmpty) base,
+        if (esnafPrompt.isNotEmpty) esnafPrompt,
         if (toolboxPrompt.isNotEmpty) toolboxPrompt,
         if (unavailableToolPrompt.isNotEmpty) unavailableToolPrompt,
       ].join('\n\n');
@@ -4424,6 +4436,7 @@ class AppController extends ChangeNotifier {
         .toList();
     final prefix = <String>[
       if (base.isNotEmpty) base,
+      if (esnafPrompt.isNotEmpty) esnafPrompt,
       if (toolboxPrompt.isNotEmpty) toolboxPrompt,
       if (unavailableToolPrompt.isNotEmpty) unavailableToolPrompt,
     ].join('\n\n');
