@@ -6194,6 +6194,15 @@ class _ComposerState extends State<_Composer> {
                             unawaited(_showStokAnaliziSheet());
                           },
                         ),
+                        _MoreActionRow(
+                          icon: Icons.rate_review_outlined,
+                          label: 'Şikayet Yanıtı',
+                          showTopBorder: true,
+                          onTap: () {
+                            close();
+                            unawaited(_showSikayetYanitiSheet());
+                          },
+                        ),
                       ],
                     ],
                   ),
@@ -6478,6 +6487,150 @@ class _ComposerState extends State<_Composer> {
       },
     );
     stokCtrl.dispose();
+  }
+
+  Future<void> _showSikayetYanitiSheet() async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final urunCtrl = TextEditingController();
+    final sikayetCtrl = TextEditingController();
+
+    InputDecoration _dec(String hint) => InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFFB0A89F)),
+      contentPadding: const EdgeInsets.all(10),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _accent, width: 1.3),
+      ),
+    );
+
+    const _fieldLabel = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF77716B),
+    );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final magazaAdi =
+            '${controller.settings['esnafMagazaAdi'] ?? ''}'.trim();
+        final planRaw =
+            '${controller.settings['esnafPlan'] ?? 'starter'}'.toLowerCase();
+        final planLabel = switch (planRaw) {
+          'growth' => 'Growth',
+          'pro' => 'Pro',
+          _ => 'Starter',
+        };
+        final storeLabel = magazaAdi.isEmpty ? '(mağaza adı yok)' : magazaAdi;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            4,
+            20,
+            MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const Icon(Icons.rate_review_outlined, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Şikayet Yanıtı',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    icon: const Icon(Icons.close_rounded),
+                    tooltip: 'Kapat',
+                  ),
+                ],
+              ),
+              Text(
+                'Mağaza: $storeLabel  |  Plan: $planLabel',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF77716B)),
+              ),
+              const SizedBox(height: 14),
+              Text('Ürün Adı', style: _fieldLabel),
+              const SizedBox(height: 6),
+              TextField(
+                controller: urunCtrl,
+                style: const TextStyle(fontSize: 13, height: 1.4),
+                decoration: _dec('Örn: Kadın Pamuklu Sweatshirt — Kırmızı / M'),
+              ),
+              const SizedBox(height: 12),
+              Text('Şikayet Metni', style: _fieldLabel),
+              const SizedBox(height: 6),
+              TextField(
+                controller: sikayetCtrl,
+                minLines: 4,
+                maxLines: 7,
+                style: const TextStyle(fontSize: 13, height: 1.4),
+                decoration: _dec(
+                  'Müşterinin yazdığı şikayeti buraya yapıştır...',
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final urun = urunCtrl.text.trim();
+                    final sikayet = sikayetCtrl.text.trim();
+                    if (urun.isEmpty || sikayet.isEmpty) return;
+                    Navigator.pop(sheetContext);
+                    final prompt =
+                        '=== KULLANICI ===\n'
+                        'Mağaza: $storeLabel | Plan: $planLabel\n\n'
+                        '=== GÖREV ===\n'
+                        'Bu Trendyol şikayetine profesyonel yanıt yaz.\n\n'
+                        'Ürün: $urun\n'
+                        'Şikayet: $sikayet\n\n'
+                        '→ "Sayın Müşterimiz," ile başla\n'
+                        '→ Özür dile, somut çözüm sun\n'
+                        '→ Maksimum 4 cümle\n'
+                        '→ Sadece yanıt metnini yaz';
+                    unawaited(controller.send(prompt));
+                  },
+                  icon: const Icon(Icons.send_rounded, size: 18),
+                  label: const Text('Yanıt Oluştur'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    urunCtrl.dispose();
+    sikayetCtrl.dispose();
   }
 
   Future<void> _showToolbox() async {
