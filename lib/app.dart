@@ -17140,6 +17140,44 @@ class _LegacyProfileSettingsPanelState
         ),
         const SizedBox(height: 12),
         const Text(
+          'Esnaf AI — Mağaza Bilgileri',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: _accent,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _LegacySettingsField(
+          label: 'Mağaza Adı ({MAGAZA_ADI})',
+          initialValue:
+              '${widget.controller.settings['esnafMagazaAdi'] ?? ''}',
+          onChanged: (value) => unawaited(
+            widget.controller.saveSetting('esnafMagazaAdi', value.trim()),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _LegacySettingsField(
+          label: 'Platform ({PLATFORM})',
+          initialValue:
+              '${widget.controller.settings['esnafPlatform'] ?? 'Trendyol'}',
+          onChanged: (value) => unawaited(
+            widget.controller.saveSetting(
+              'esnafPlatform',
+              value.trim().isEmpty ? 'Trendyol' : value.trim(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _LegacySettingsField(
+          label: 'Plan ({PLAN})',
+          initialValue: '${widget.controller.settings['esnafPlan'] ?? ''}',
+          onChanged: (value) => unawaited(
+            widget.controller.saveSetting('esnafPlan', value.trim()),
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
           'Global prompt',
           style: TextStyle(fontSize: 12, color: _lightMuted),
         ),

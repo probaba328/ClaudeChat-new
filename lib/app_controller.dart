@@ -4403,7 +4403,24 @@ class AppController extends ChangeNotifier {
   }
 
   String _chatSystemPrompt({bool includeTools = true}) {
-    final base = '${settings['systemPrompt'] ?? ''}'.trim();
+    final base = '${settings['systemPrompt'] ?? ''}'
+        .trim()
+        .replaceAll(
+          '{MAGAZA_ADI}',
+          '${settings['esnafMagazaAdi'] ?? ''}'.trim().isEmpty
+              ? 'Belirtilmemiş'
+              : '${settings['esnafMagazaAdi']}',
+        )
+        .replaceAll(
+          '{PLATFORM}',
+          '${settings['esnafPlatform'] ?? 'Trendyol'}',
+        )
+        .replaceAll(
+          '{PLAN}',
+          '${settings['esnafPlan'] ?? ''}'.trim().isEmpty
+              ? 'Belirtilmemiş'
+              : '${settings['esnafPlan']}',
+        );
     final toolboxPrompt = includeTools && settings['toolboxEnabled'] != false
         ? _toolboxSystemPrompt()
         : '';
