@@ -6203,6 +6203,15 @@ class _ComposerState extends State<_Composer> {
                             unawaited(_showSikayetYanitiSheet());
                           },
                         ),
+                        _MoreActionRow(
+                          icon: Icons.bar_chart_rounded,
+                          label: 'Günlük Karşılaştırma',
+                          showTopBorder: true,
+                          onTap: () {
+                            close();
+                            unawaited(_showGunlukKarsilastirmaSheet());
+                          },
+                        ),
                       ],
                     ],
                   ),
@@ -6631,6 +6640,171 @@ class _ComposerState extends State<_Composer> {
     );
     urunCtrl.dispose();
     sikayetCtrl.dispose();
+  }
+
+  Future<void> _showGunlukKarsilastirmaSheet() async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final bugunCtrl = TextEditingController();
+    final dunCtrl = TextEditingController();
+
+    InputDecoration _dec(String hint) => InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFFB0A89F)),
+      contentPadding: const EdgeInsets.all(10),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _accent, width: 1.3),
+      ),
+    );
+
+    const _fieldLabel = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF77716B),
+    );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final magazaAdi =
+            '${controller.settings['esnafMagazaAdi'] ?? ''}'.trim();
+        final planRaw =
+            '${controller.settings['esnafPlan'] ?? 'starter'}'.toLowerCase();
+        final planLabel = switch (planRaw) {
+          'growth' => 'Growth',
+          'pro' => 'Pro',
+          _ => 'Starter',
+        };
+        final storeLabel = magazaAdi.isEmpty ? '(mağaza adı yok)' : magazaAdi;
+        final isStarter = planRaw == 'starter';
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            4,
+            20,
+            MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    const Icon(Icons.bar_chart_rounded, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Günlük Karşılaştırma',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.close_rounded),
+                      tooltip: 'Kapat',
+                    ),
+                  ],
+                ),
+                Text(
+                  'Mağaza: $storeLabel  |  Plan: $planLabel',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF77716B),
+                  ),
+                ),
+                if (isStarter) ...<Widget>[
+                  const SizedBox(height: 4),
+                  const Text(
+                    'NOT: Haftalık ve aylık trend analizi Growth planda açılıyor.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFFB0A89F)),
+                  ),
+                ],
+                const SizedBox(height: 14),
+                Text('Bugünkü Satışlar', style: _fieldLabel),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: bugunCtrl,
+                  minLines: 4,
+                  maxLines: 7,
+                  style: const TextStyle(fontSize: 13, height: 1.4),
+                  decoration: _dec(
+                    'Örn: Ürün A — 12 satış, 3.600₺\nÜrün B — 5 satış, 750₺\n...',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text('Dünkü Satışlar', style: _fieldLabel),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: dunCtrl,
+                  minLines: 4,
+                  maxLines: 7,
+                  style: const TextStyle(fontSize: 13, height: 1.4),
+                  decoration: _dec(
+                    'Örn: Ürün A — 9 satış, 2.700₺\nÜrün B — 8 satış, 1.200₺\n...',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      final bugun = bugunCtrl.text.trim();
+                      final dun = dunCtrl.text.trim();
+                      if (bugun.isEmpty || dun.isEmpty) return;
+                      Navigator.pop(sheetContext);
+                      final starterNote = isStarter
+                          ? '\n\nNOT: Haftalık ve aylık trend analizi Growth planda açılıyor.'
+                          : '';
+                      final prompt =
+                          '=== KULLANICI ===\n'
+                          'Mağaza: $storeLabel | Plan: $planLabel\n\n'
+                          '=== GÖREV ===\n'
+                          'Günlük satışları karşılaştır.\n\n'
+                          'Bugün:\n$bugun\n\n'
+                          'Dün:\n$dun\n\n'
+                          '→ Karşılaştırma tablosu\n'
+                          '→ En çok satan ürün\n'
+                          '→ En fazla iade gelen ürün\n'
+                          '→ Yarın için 3 aksiyon'
+                          '$starterNote';
+                      unawaited(controller.send(prompt));
+                    },
+                    icon: const Icon(Icons.send_rounded, size: 18),
+                    label: const Text('Karşılaştır'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _accent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    bugunCtrl.dispose();
+    dunCtrl.dispose();
   }
 
   Future<void> _showToolbox() async {
