@@ -6175,6 +6175,16 @@ class _ComposerState extends State<_Composer> {
                           }
                         },
                       ),
+                      if (controller.settings['esnafEnabled'] == true)
+                        _MoreActionRow(
+                          icon: Icons.storefront_outlined,
+                          label: 'Sipariş Analizi',
+                          showTopBorder: true,
+                          onTap: () {
+                            close();
+                            unawaited(_showSiparisAnaliziSheet());
+                          },
+                        ),
                     ],
                   ),
                 ),
@@ -6186,6 +6196,138 @@ class _ComposerState extends State<_Composer> {
     );
     setState(() => _actionsEntry = entry);
     overlay.insert(entry);
+  }
+
+  Future<void> _showSiparisAnaliziSheet() async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final siparisCtrl = TextEditingController();
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final magazaAdi =
+            '${controller.settings['esnafMagazaAdi'] ?? ''}'.trim();
+        final planRaw =
+            '${controller.settings['esnafPlan'] ?? 'starter'}'.toLowerCase();
+        final planLabel = switch (planRaw) {
+          'growth' => 'Growth',
+          'pro' => 'Pro',
+          _ => 'Starter',
+        };
+        final storeLabel = magazaAdi.isEmpty ? '(mağaza adı yok)' : magazaAdi;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            4,
+            20,
+            MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const Icon(Icons.storefront_outlined, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Sipariş Analizi',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    icon: const Icon(Icons.close_rounded),
+                    tooltip: 'Kapat',
+                  ),
+                ],
+              ),
+              Text(
+                'Mağaza: $storeLabel  |  Plan: $planLabel',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF77716B)),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Sipariş listesini yapıştır',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF77716B),
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: siparisCtrl,
+                minLines: 5,
+                maxLines: 10,
+                style: const TextStyle(fontSize: 13, height: 1.4),
+                decoration: InputDecoration(
+                  hintText:
+                      'Örn: #12345 Beklemede 2 adet 250₺\n#12346 Kargoda 1 adet 180₺\n...',
+                  hintStyle: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFB0A89F),
+                  ),
+                  contentPadding: const EdgeInsets.all(10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _accent, width: 1.3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final siparisler = siparisCtrl.text.trim();
+                    if (siparisler.isEmpty) return;
+                    Navigator.pop(sheetContext);
+                    final prompt =
+                        '=== KULLANICI ===\n'
+                        'Mağaza: $storeLabel | Plan: $planLabel\n\n'
+                        '=== GÖREV ===\n'
+                        'Aşağıdaki Trendyol siparişlerini analiz et.\n\n'
+                        '$siparisler\n\n'
+                        '→ Durum / Adet / Tutar tablosu yap\n'
+                        '→ Geciken veya iptal riskli olanları 🚨 ile belirt\n'
+                        '→ $storeLabel için bugün yapılacak 3 aksiyon söyle\n'
+                        'Türkçe yaz';
+                    unawaited(controller.send(prompt));
+                  },
+                  icon: const Icon(Icons.send_rounded, size: 18),
+                  label: const Text('Analiz Et'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    siparisCtrl.dispose();
   }
 
   Future<void> _showToolbox() async {
