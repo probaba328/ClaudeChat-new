@@ -6175,7 +6175,7 @@ class _ComposerState extends State<_Composer> {
                           }
                         },
                       ),
-                      if (controller.settings['esnafEnabled'] == true)
+                      if (controller.settings['esnafEnabled'] == true) ...<Widget>[
                         _MoreActionRow(
                           icon: Icons.storefront_outlined,
                           label: 'Sipariş Analizi',
@@ -6185,6 +6185,16 @@ class _ComposerState extends State<_Composer> {
                             unawaited(_showSiparisAnaliziSheet());
                           },
                         ),
+                        _MoreActionRow(
+                          icon: Icons.inventory_2_outlined,
+                          label: 'Stok Analizi',
+                          showTopBorder: true,
+                          onTap: () {
+                            close();
+                            unawaited(_showStokAnaliziSheet());
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -6328,6 +6338,146 @@ class _ComposerState extends State<_Composer> {
       },
     );
     siparisCtrl.dispose();
+  }
+
+  Future<void> _showStokAnaliziSheet() async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final stokCtrl = TextEditingController();
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final magazaAdi =
+            '${controller.settings['esnafMagazaAdi'] ?? ''}'.trim();
+        final planRaw =
+            '${controller.settings['esnafPlan'] ?? 'starter'}'.toLowerCase();
+        final planLabel = switch (planRaw) {
+          'growth' => 'Growth',
+          'pro' => 'Pro',
+          _ => 'Starter',
+        };
+        final storeLabel = magazaAdi.isEmpty ? '(mağaza adı yok)' : magazaAdi;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            4,
+            20,
+            MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const Icon(Icons.inventory_2_outlined, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Stok Analizi',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    icon: const Icon(Icons.close_rounded),
+                    tooltip: 'Kapat',
+                  ),
+                ],
+              ),
+              Text(
+                'Mağaza: $storeLabel  |  Plan: $planLabel',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF77716B)),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Kritik eşik: 5 adet veya 3 günden az',
+                style: TextStyle(fontSize: 11, color: Color(0xFFB0A89F)),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Stok listesini yapıştır',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF77716B),
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: stokCtrl,
+                minLines: 5,
+                maxLines: 10,
+                style: const TextStyle(fontSize: 13, height: 1.4),
+                decoration: InputDecoration(
+                  hintText:
+                      'Örn: Ürün A — Stok: 3 adet, Günlük sat.: 2\n'
+                      'Ürün B — Stok: 50 adet, Günlük sat.: 1\n...',
+                  hintStyle: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFB0A89F),
+                  ),
+                  contentPadding: const EdgeInsets.all(10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: _accent, width: 1.3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final stoklar = stokCtrl.text.trim();
+                    if (stoklar.isEmpty) return;
+                    Navigator.pop(sheetContext);
+                    final prompt =
+                        '=== KULLANICI ===\n'
+                        'Mağaza: $storeLabel | Plan: $planLabel\n\n'
+                        '=== GÖREV ===\n'
+                        'Stok verilerini analiz et. '
+                        'Kritik eşik: 5 adet veya 3 günden az.\n\n'
+                        '$stoklar\n\n'
+                        '→ Kritik ürünleri 🚨 ile işaretle\n'
+                        '→ Kaç gün sonra biteceğini hesapla\n'
+                        '→ 30 günlük satışa göre sipariş miktarı öner\n'
+                        '→ Stok fazlası varsa belirt\n'
+                        'Türkçe yaz';
+                    unawaited(controller.send(prompt));
+                  },
+                  icon: const Icon(Icons.send_rounded, size: 18),
+                  label: const Text('Analiz Et'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    stokCtrl.dispose();
   }
 
   Future<void> _showToolbox() async {
