@@ -6230,6 +6230,15 @@ class _ComposerState extends State<_Composer> {
                             unawaited(_showFiyatStratejisiSheet());
                           },
                         ),
+                        _MoreActionRow(
+                          icon: Icons.assignment_return_outlined,
+                          label: 'İade Analizi',
+                          showTopBorder: true,
+                          onTap: () {
+                            close();
+                            unawaited(_showIadeAnaliziSheet());
+                          },
+                        ),
                       ],
                     ],
                   ),
@@ -7212,6 +7221,166 @@ class _ComposerState extends State<_Composer> {
     fiyatCtrl.dispose();
     maliyetCtrl.dispose();
     rakiplerCtrl.dispose();
+  }
+
+  Future<void> _showIadeAnaliziSheet() async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final iadeOranCtrl = TextEditingController();
+    final nedenlerCtrl = TextEditingController();
+
+    InputDecoration _dec(String hint) => InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFFB0A89F)),
+      contentPadding: const EdgeInsets.all(10),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _accent, width: 1.3),
+      ),
+    );
+
+    const _fieldLabel = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF77716B),
+    );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final magazaAdi =
+            '${controller.settings['esnafMagazaAdi'] ?? ''}'.trim();
+        final planRaw =
+            '${controller.settings['esnafPlan'] ?? 'starter'}'.toLowerCase();
+        final planLabel = switch (planRaw) {
+          'growth' => 'Growth',
+          'pro' => 'Pro',
+          _ => 'Starter',
+        };
+        final storeLabel = magazaAdi.isEmpty ? '(mağaza adı yok)' : magazaAdi;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            4,
+            20,
+            MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    const Icon(Icons.assignment_return_outlined, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'İade Analizi',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.close_rounded),
+                      tooltip: 'Kapat',
+                    ),
+                  ],
+                ),
+                Text(
+                  'Mağaza: $storeLabel  |  Plan: $planLabel',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF77716B),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Trendyol ortalaması: ~%8-12',
+                  style: TextStyle(fontSize: 11, color: Color(0xFFB0A89F)),
+                ),
+                const SizedBox(height: 14),
+                Text('İade Oranım (%)', style: _fieldLabel),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: iadeOranCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  style: const TextStyle(fontSize: 13, height: 1.4),
+                  decoration: _dec('Örn: 15'),
+                ),
+                const SizedBox(height: 12),
+                Text('İade Nedenleri', style: _fieldLabel),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: nedenlerCtrl,
+                  minLines: 4,
+                  maxLines: 8,
+                  style: const TextStyle(fontSize: 13, height: 1.4),
+                  decoration: _dec(
+                    'Örn: Beden uyumsuzluğu — 40%\n'
+                    'Renk farklılığı — 25%\n'
+                    'Hasar/kusurlu — 20%\n'
+                    'Vazgeçtim — 15%',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      final iadeOran = iadeOranCtrl.text.trim();
+                      final nedenler = nedenlerCtrl.text.trim();
+                      if (iadeOran.isEmpty || nedenler.isEmpty) return;
+                      Navigator.pop(sheetContext);
+                      final prompt =
+                          '=== KULLANICI ===\n'
+                          'Mağaza: $storeLabel | Plan: $planLabel\n\n'
+                          '=== GÖREV ===\n'
+                          'İade verilerini analiz et.\n\n'
+                          'İade oranım: %$iadeOran\n'
+                          'Nedenler:\n$nedenler\n\n'
+                          '→ En kritik neden ve kök sebebi\n'
+                          '→ Her neden için 1 çözüm\n'
+                          '→ Hedef iade oranı ve süre\n'
+                          '→ Trendyol ortalaması ~%8-12 ile karşılaştır';
+                      unawaited(controller.send(prompt));
+                    },
+                    icon: const Icon(Icons.send_rounded, size: 18),
+                    label: const Text('Analiz Et'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _accent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    iadeOranCtrl.dispose();
+    nedenlerCtrl.dispose();
   }
 
   Future<void> _showToolbox() async {
