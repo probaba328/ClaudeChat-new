@@ -6212,6 +6212,15 @@ class _ComposerState extends State<_Composer> {
                             unawaited(_showGunlukKarsilastirmaSheet());
                           },
                         ),
+                        _MoreActionRow(
+                          icon: Icons.edit_document,
+                          label: 'Ürün Metni Yaz',
+                          showTopBorder: true,
+                          onTap: () {
+                            close();
+                            unawaited(_showUrunMetniSheet());
+                          },
+                        ),
                       ],
                     ],
                   ),
@@ -6805,6 +6814,180 @@ class _ComposerState extends State<_Composer> {
     );
     bugunCtrl.dispose();
     dunCtrl.dispose();
+  }
+
+  Future<void> _showUrunMetniSheet() async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final urunCtrl = TextEditingController();
+    final kategoriCtrl = TextEditingController();
+    final ozelliklerCtrl = TextEditingController();
+
+    InputDecoration _dec(String hint) => InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFFB0A89F)),
+      contentPadding: const EdgeInsets.all(10),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _accent, width: 1.3),
+      ),
+    );
+
+    const _fieldLabel = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF77716B),
+    );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final magazaAdi =
+            '${controller.settings['esnafMagazaAdi'] ?? ''}'.trim();
+        final planRaw =
+            '${controller.settings['esnafPlan'] ?? 'starter'}'.toLowerCase();
+        final planLabel = switch (planRaw) {
+          'growth' => 'Growth',
+          'pro' => 'Pro',
+          _ => 'Starter',
+        };
+        final storeLabel = magazaAdi.isEmpty ? '(mağaza adı yok)' : magazaAdi;
+        final isPro = planRaw == 'pro';
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            4,
+            20,
+            MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    const Icon(Icons.edit_document, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Ürün Metni Yaz',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.close_rounded),
+                      tooltip: 'Kapat',
+                    ),
+                  ],
+                ),
+                Text(
+                  'Mağaza: $storeLabel  |  Plan: $planLabel',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF77716B),
+                  ),
+                ),
+                if (isPro) ...<Widget>[
+                  const SizedBox(height: 4),
+                  const Text(
+                    '✨ Pro: rakip başlık karşılaştırması ve eksik anahtar kelime tespiti aktif.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFFB0A89F)),
+                  ),
+                ],
+                const SizedBox(height: 14),
+                Text('Ürün Adı', style: _fieldLabel),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: urunCtrl,
+                  style: const TextStyle(fontSize: 13, height: 1.4),
+                  decoration: _dec('Örn: Kadın Pamuklu Oversize Sweatshirt'),
+                ),
+                const SizedBox(height: 12),
+                Text('Kategori', style: _fieldLabel),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: kategoriCtrl,
+                  style: const TextStyle(fontSize: 13, height: 1.4),
+                  decoration: _dec('Örn: Kadın > Sweatshirt & Hoodie'),
+                ),
+                const SizedBox(height: 12),
+                Text('Özellikler', style: _fieldLabel),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: ozelliklerCtrl,
+                  minLines: 3,
+                  maxLines: 6,
+                  style: const TextStyle(fontSize: 13, height: 1.4),
+                  decoration: _dec(
+                    'Örn: %100 pamuk, 380 gsm, unisex kalıp, S-3XL beden, 5 renk seçeneği',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      final urun = urunCtrl.text.trim();
+                      final kategori = kategoriCtrl.text.trim();
+                      final ozellikler = ozelliklerCtrl.text.trim();
+                      if (urun.isEmpty ||
+                          kategori.isEmpty ||
+                          ozellikler.isEmpty) return;
+                      Navigator.pop(sheetContext);
+                      final proExtra = isPro
+                          ? '\n→ Rakip ürün başlıklarıyla karşılaştır, eksik anahtar kelimeleri belirt.'
+                          : '';
+                      final prompt =
+                          '=== KULLANICI ===\n'
+                          'Mağaza: $storeLabel | Plan: $planLabel\n\n'
+                          '=== GÖREV ===\n'
+                          'Trendyol için SEO uyumlu ürün metni yaz.\n\n'
+                          'Ürün: $urun\n'
+                          'Kategori: $kategori\n'
+                          'Özellikler: $ozellikler\n\n'
+                          '→ Başlık: maks 80 karakter\n'
+                          '→ Açıklama: 200-300 kelime\n'
+                          '→ 10 anahtar kelime'
+                          '$proExtra';
+                      unawaited(controller.send(prompt));
+                    },
+                    icon: const Icon(Icons.send_rounded, size: 18),
+                    label: const Text('Metin Oluştur'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _accent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    urunCtrl.dispose();
+    kategoriCtrl.dispose();
+    ozelliklerCtrl.dispose();
   }
 
   Future<void> _showToolbox() async {
