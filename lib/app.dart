@@ -6221,6 +6221,15 @@ class _ComposerState extends State<_Composer> {
                             unawaited(_showUrunMetniSheet());
                           },
                         ),
+                        _MoreActionRow(
+                          icon: Icons.price_change_outlined,
+                          label: 'Fiyat Stratejisi',
+                          showTopBorder: true,
+                          onTap: () {
+                            close();
+                            unawaited(_showFiyatStratejisiSheet());
+                          },
+                        ),
                       ],
                     ],
                   ),
@@ -6988,6 +6997,221 @@ class _ComposerState extends State<_Composer> {
     urunCtrl.dispose();
     kategoriCtrl.dispose();
     ozelliklerCtrl.dispose();
+  }
+
+  Future<void> _showFiyatStratejisiSheet() async {
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final urunCtrl = TextEditingController();
+    final fiyatCtrl = TextEditingController();
+    final maliyetCtrl = TextEditingController();
+    final rakiplerCtrl = TextEditingController();
+
+    InputDecoration _dec(String hint, {TextInputType? type}) =>
+        InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(fontSize: 12, color: Color(0xFFB0A89F)),
+          contentPadding: const EdgeInsets.all(10),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: _accent, width: 1.3),
+          ),
+        );
+
+    const _fieldLabel = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF77716B),
+    );
+
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final magazaAdi =
+            '${controller.settings['esnafMagazaAdi'] ?? ''}'.trim();
+        final planRaw =
+            '${controller.settings['esnafPlan'] ?? 'starter'}'.toLowerCase();
+        final planLabel = switch (planRaw) {
+          'growth' => 'Growth',
+          'pro' => 'Pro',
+          _ => 'Starter',
+        };
+        final storeLabel = magazaAdi.isEmpty ? '(mağaza adı yok)' : magazaAdi;
+        final isStarter = planRaw == 'starter';
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            4,
+            20,
+            MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    const Icon(Icons.price_change_outlined, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Fiyat Stratejisi',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.close_rounded),
+                      tooltip: 'Kapat',
+                    ),
+                  ],
+                ),
+                Text(
+                  'Mağaza: $storeLabel  |  Plan: $planLabel',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF77716B),
+                  ),
+                ),
+                if (isStarter) ...<Widget>[
+                  const SizedBox(height: 4),
+                  const Text(
+                    'NOT: Detaylı rakip analizi Growth planda açılıyor.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFFB0A89F)),
+                  ),
+                ],
+                const SizedBox(height: 14),
+                Text('Ürün Adı', style: _fieldLabel),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: urunCtrl,
+                  style: const TextStyle(fontSize: 13, height: 1.4),
+                  decoration: _dec('Örn: Kadın Pamuklu Sweatshirt'),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text('Fiyatım (₺)', style: _fieldLabel),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: fiyatCtrl,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
+                            decoration: _dec('Örn: 299'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text('Maliyetim (₺)', style: _fieldLabel),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: maliyetCtrl,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
+                            decoration: _dec('Örn: 150'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text('Rakip Fiyatları', style: _fieldLabel),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: rakiplerCtrl,
+                  minLines: 3,
+                  maxLines: 5,
+                  style: const TextStyle(fontSize: 13, height: 1.4),
+                  decoration: _dec(
+                    'Örn: Marka A — 249₺, Marka B — 319₺, Marka C — 279₺',
+                  ),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      final urun = urunCtrl.text.trim();
+                      final fiyat = fiyatCtrl.text.trim();
+                      final maliyet = maliyetCtrl.text.trim();
+                      final rakipler = rakiplerCtrl.text.trim();
+                      if (urun.isEmpty ||
+                          fiyat.isEmpty ||
+                          maliyet.isEmpty ||
+                          rakipler.isEmpty) return;
+                      Navigator.pop(sheetContext);
+                      final starterNote = isStarter
+                          ? '\n\nNOT: Detaylı rakip analizi Growth planda açılıyor.'
+                          : '';
+                      final prompt =
+                          '=== KULLANICI ===\n'
+                          'Mağaza: $storeLabel | Plan: $planLabel\n\n'
+                          '=== GÖREV ===\n'
+                          'Fiyat stratejisi analiz et.\n\n'
+                          'Ürün: $urun\n'
+                          'Fiyatım: ${fiyat}₺\n'
+                          'Maliyetim: ${maliyet}₺\n'
+                          'Rakipler: $rakipler\n\n'
+                          '→ Fiyat konumum (ucuz/orta/pahalı)\n'
+                          '→ Optimal fiyat (min %20 kar)\n'
+                          '→ Flash Sale\'e gireyim mi?\n'
+                          '→ Flash fiyat ne olmalı?'
+                          '$starterNote';
+                      unawaited(controller.send(prompt));
+                    },
+                    icon: const Icon(Icons.send_rounded, size: 18),
+                    label: const Text('Analiz Et'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _accent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    urunCtrl.dispose();
+    fiyatCtrl.dispose();
+    maliyetCtrl.dispose();
+    rakiplerCtrl.dispose();
   }
 
   Future<void> _showToolbox() async {
