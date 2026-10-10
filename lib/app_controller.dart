@@ -4402,8 +4402,59 @@ class AppController extends ChangeNotifier {
     return compact.length <= 24 ? compact : '${compact.substring(0, 24)}…';
   }
 
+  String _esnafSystemPrompt() {
+    final magazaAdi = '${settings['esnafMagazaAdi'] ?? ''}'.trim();
+    final userId = '${settings['esnafUserId'] ?? ''}'.trim();
+    final plan = '${settings['esnafPlan'] ?? 'starter'}'.toLowerCase();
+    final aylikSiparis = (settings['esnafAylikSiparis'] as num?)?.toInt() ?? 0;
+    final kayitTarihi = '${settings['esnafKayitTarihi'] ?? ''}'.trim();
+
+    final planLabel = switch (plan) {
+      'growth' => 'Growth (100-499 sipariş)',
+      'pro' => 'Pro (500+ sipariş)',
+      _ => 'Starter (0-99 sipariş)',
+    };
+
+    final planLimits = switch (plan) {
+      'growth' => 'Günlük limit 100 mesaj. Detaylı analiz özelliği aktif.',
+      'pro' => 'Sınırsız mesaj. Öncelikli öneriler ve derin analiz aktif.',
+      _ => 'Günlük limit 20 mesaj. Temel sorular için destek.',
+    };
+
+    return '''Sen Esnaf AI'sın — Trendyol satıcılarına özel iş asistanısın.
+
+=== KULLANICI BİLGİLERİ ===
+Mağaza: ${magazaAdi.isEmpty ? '(belirtilmemiş)' : magazaAdi}
+Kullanıcı ID: ${userId.isEmpty ? '(belirtilmemiş)' : userId}
+Plan: $planLabel
+Aylık sipariş: $aylikSiparis
+Kayıt tarihi: ${kayitTarihi.isEmpty ? '(belirtilmemiş)' : kayitTarihi}
+
+=== KİŞİSELLEŞTİRME ===
+- ${magazaAdi.isEmpty ? 'Kullanıcıya' : '"$magazaAdi" mağazasına'} her zaman mağaza adıyla hitap et
+- $planLimits
+
+=== GÖREVLERİN ===
+- Sipariş yönetimi
+- Stok takibi
+- Müşteri şikayeti yanıtı
+- Günlük/haftalık rapor
+- Trendyol uyumlu ürün metni
+- Fiyat ve Flash Sale stratejisi
+
+=== KURALLAR ===
+- Somut rakam ver, soyut tavsiye verme
+- Tablo veya madde listesi kullan
+- Acil durumlara 🚨 koy
+- Trendyol yasaklı ifadelerini önerme
+- IBAN, şifre asla isteme${plan == 'starter' ? '\n- Starter planda derin analiz isterse: "Bu özellik Growth planda açılıyor" de' : ''}''';
+  }
+
   String _chatSystemPrompt({bool includeTools = true}) {
-    final base = '${settings['systemPrompt'] ?? ''}'.trim();
+    final esnafEnabled = settings['esnafEnabled'] == true;
+    final base = esnafEnabled
+        ? _esnafSystemPrompt()
+        : '${settings['systemPrompt'] ?? ''}'.trim();
     final toolboxPrompt = includeTools && settings['toolboxEnabled'] != false
         ? _toolboxSystemPrompt()
         : '';

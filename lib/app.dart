@@ -15331,6 +15331,14 @@ class _SettingsPageState extends State<_SettingsPage> {
                 ],
               ),
               _SettingsCard(
+                title: 'Esnaf AI',
+                icon: Icons.storefront_outlined,
+                onOpenChanged: (open) => _handleCardOpen('Esnaf AI', open),
+                children: <Widget>[
+                  _EsnafAiSettingsPanel(controller: controller),
+                ],
+              ),
+              _SettingsCard(
                 title: 'Toolbox',
                 icon: Icons.construction_outlined,
                 onOpenChanged: (open) => _handleCardOpen('Toolbox', open),
@@ -17215,6 +17223,196 @@ class _LegacyProfileSettingsPanelState
       ],
     ),
   );
+}
+
+class _EsnafAiSettingsPanel extends StatefulWidget {
+  const _EsnafAiSettingsPanel({required this.controller});
+  final AppController controller;
+
+  @override
+  State<_EsnafAiSettingsPanel> createState() => _EsnafAiSettingsPanelState();
+}
+
+class _EsnafAiSettingsPanelState extends State<_EsnafAiSettingsPanel> {
+  late final TextEditingController _magazaAdi;
+  late final TextEditingController _userId;
+  late final TextEditingController _aylikSiparis;
+  late final TextEditingController _kayitTarihi;
+
+  @override
+  void initState() {
+    super.initState();
+    final s = widget.controller.settings;
+    _magazaAdi = TextEditingController(
+      text: '${s['esnafMagazaAdi'] ?? ''}',
+    );
+    _userId = TextEditingController(text: '${s['esnafUserId'] ?? ''}');
+    _aylikSiparis = TextEditingController(
+      text: '${(s['esnafAylikSiparis'] as num?)?.toInt() ?? 0}',
+    );
+    _kayitTarihi = TextEditingController(
+      text: '${s['esnafKayitTarihi'] ?? ''}',
+    );
+  }
+
+  @override
+  void dispose() {
+    _magazaAdi.dispose();
+    _userId.dispose();
+    _aylikSiparis.dispose();
+    _kayitTarihi.dispose();
+    super.dispose();
+  }
+
+  InputDecoration _fieldDecoration() => InputDecoration(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFE5E0DB)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: _accent, width: 1.3),
+    ),
+  );
+
+  Widget _fieldLabel(String text) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 10.8,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF77716B),
+    ),
+  );
+
+  void _save() {
+    final c = widget.controller;
+    unawaited(c.saveSetting('esnafMagazaAdi', _magazaAdi.text.trim()));
+    unawaited(c.saveSetting('esnafUserId', _userId.text.trim()));
+    unawaited(c.saveSetting(
+      'esnafAylikSiparis',
+      int.tryParse(_aylikSiparis.text.trim()) ?? 0,
+    ));
+    unawaited(c.saveSetting('esnafKayitTarihi', _kayitTarihi.text.trim()));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Esnaf AI ayarları kaydedildi'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.controller.settings;
+    final enabled = s['esnafEnabled'] == true;
+    final currentPlan = '${s['esnafPlan'] ?? 'starter'}';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _LegacySettingsSwitchRow(
+            legacyIcon: _LegacyIconKind.tool,
+            label: 'Esnaf AI\'yı Etkinleştir',
+            value: enabled,
+            onChanged: (value) => unawaited(
+              widget.controller.saveSetting('esnafEnabled', value),
+            ),
+          ),
+          const _LegacySettingsHint(
+            'Etkinleştirildiğinde, Trendyol satıcı asistanı sistem istemi devreye girer.',
+            legacyLines: 1,
+          ),
+          if (enabled) ...<Widget>[
+            const SizedBox(height: 12),
+            _fieldLabel('Mağaza Adı'),
+            const SizedBox(height: 7),
+            TextField(
+              controller: _magazaAdi,
+              style: const TextStyle(fontSize: 12.6, height: 1.28),
+              decoration: _fieldDecoration(),
+            ),
+            const SizedBox(height: 10),
+            _fieldLabel('Kullanıcı ID'),
+            const SizedBox(height: 7),
+            TextField(
+              controller: _userId,
+              style: const TextStyle(fontSize: 12.6, height: 1.28),
+              decoration: _fieldDecoration(),
+            ),
+            const SizedBox(height: 10),
+            _fieldLabel('Plan'),
+            const SizedBox(height: 7),
+            DropdownButtonFormField<String>(
+              value: currentPlan,
+              decoration: _fieldDecoration(),
+              style: const TextStyle(fontSize: 12.6, color: Colors.black87),
+              items: const <DropdownMenuItem<String>>[
+                DropdownMenuItem(
+                  value: 'starter',
+                  child: Text('Starter (0–99 sipariş / ay)'),
+                ),
+                DropdownMenuItem(
+                  value: 'growth',
+                  child: Text('Growth (100–499 sipariş / ay)'),
+                ),
+                DropdownMenuItem(
+                  value: 'pro',
+                  child: Text('Pro (500+ sipariş / ay)'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  unawaited(
+                    widget.controller.saveSetting('esnafPlan', value),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 10),
+            _fieldLabel('Aylık Sipariş Sayısı'),
+            const SizedBox(height: 7),
+            TextField(
+              controller: _aylikSiparis,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(fontSize: 12.6, height: 1.28),
+              decoration: _fieldDecoration(),
+            ),
+            const SizedBox(height: 10),
+            _fieldLabel('Kayıt Tarihi (gg.aa.yyyy)'),
+            const SizedBox(height: 7),
+            TextField(
+              controller: _kayitTarihi,
+              style: const TextStyle(fontSize: 12.6, height: 1.28),
+              decoration: _fieldDecoration(),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: 80,
+              height: 26.67,
+              child: OutlinedButton(
+                onPressed: _save,
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  textStyle: const TextStyle(fontSize: 11.7),
+                ),
+                child: const Text('Kaydet'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _LegacyToolboxSettingsPanel extends StatelessWidget {

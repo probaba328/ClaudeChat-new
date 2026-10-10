@@ -156,6 +156,12 @@ class SettingsService {
     'diagnosticsEnabled': true,
     'voiceBackgroundPlayback': false,
     'language': 'zh-CN',
+    'esnafEnabled': false,
+    'esnafMagazaAdi': '',
+    'esnafUserId': '',
+    'esnafPlan': 'starter',
+    'esnafAylikSiparis': 0,
+    'esnafKayitTarihi': '',
   };
 
   Future<Map<String, Object?>> load() async {
